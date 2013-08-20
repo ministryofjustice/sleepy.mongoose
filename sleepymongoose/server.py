@@ -20,7 +20,6 @@ class MongoServer(object):
         ])
 
     def dispatch_request(self, request):
-        print "dispatch_request"
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
             endpoint, values = adapter.match()
@@ -29,9 +28,6 @@ class MongoServer(object):
             return e
 
     def on_call_function(self, request, db=None, collection=None, action=None):
-        print "on_call_function"
-        print db, collection, action
-
         output = StringIO.StringIO()
         args = request.values
 

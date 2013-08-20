@@ -4,11 +4,11 @@ a wsgi access point
 for dev purpose execute file:
 $ python wsgi.py
 
-for production purpose use i.e. gunicorn:
-$ gunicorn sleepymongoose.wsgi:app
+for production purpose use i.e. gunicorn+gevent:
+$ gunicorn -k gevent sleepymongoose.wsgi:app
 
 to provide alternative configuration:
-$ SLEEPYMONGOOSE_CONFIG=path_to_config.ini gunicorn sleepymongoose.wsgi:app
+$ SLEEPYMONGOOSE_CONFIG=path_to_config.ini gunicorn -k gevent sleepymongoose.wsgi:app
 
 """
 from sleepymongoose.server import create_app
