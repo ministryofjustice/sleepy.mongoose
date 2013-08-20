@@ -26,6 +26,7 @@ import urlparse
 import cgi
 import getopt
 import sys
+import time
 
 try:
     import json
@@ -37,7 +38,6 @@ try:
     urlparse.parse_qs
 except AttributeError:
     urlparse.parse_qs = cgi.parse_qs
-
 
 
 class MongoServer(HTTPServer):
@@ -73,11 +73,12 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
     docroot = "."
     mongos = []
     response_headers = []
-    jsonp_callback = None;
+    jsonp_callback = None
 
-    def _parse_call(self, uri):
-        """ 
-        this turns a uri like: /foo/bar/_query into properties: using the db 
+    @staticmethod
+    def _parse_call(uri):
+        """
+        this turns a uri like: /foo/bar/_query into properties: using the db
         foo, the collection bar, executing a query.
 
         returns the database, collection, and action
@@ -95,8 +96,7 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
         else:
             return (parts[0], ".".join(parts[1:-1]), parts[-1])
 
-
-    def call_handler(self, uri, args):
+    def call_handler(self, uri, args, method):
         """ execute something """
 
         (db, collection, func_name) = self._parse_call(uri)
@@ -106,14 +106,14 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
 
         name = None
         if "name" in args:
-            if type(args).__name__ == "dict":
+            if method == 'GET':
                 name = args["name"][0]
             else:
                 name = args.getvalue("name")
 
         self.jsonp_callback = None
         if "callback" in args:
-            if type(args).__name__ == "dict":
+            if method == 'GET':
                 self.jsonp_callback = args["callback"][0]
             else:
                 self.jsonp_callback = args.getvalue("callback")
@@ -127,9 +127,9 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
             self.end_headers()
 
             if self.jsonp_callback:
-                func(args, self.prependJSONPCallback, name = name, db = db, collection = collection)
+                func(args, self.prependJSONPCallback, name=name, db=db, collection=collection, method=method)
             else:
-                func(args, self.wfile.write, name = name, db = db, collection = collection)
+                func(args, self.wfile.write, name=name, db=db, collection=collection, method=method)
 
             return
         else:
@@ -138,7 +138,7 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
         
     def prependJSONPCallback(self, str):
         jsonp_output = '%s(' % self.jsonp_callback + str + ')'
-        self.wfile.write( jsonp_output )
+        self.wfile.write(jsonp_output)
         
     # TODO: check for ..s
     def process_uri(self, method):
@@ -174,7 +174,6 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
 
         return (uri, args, type)
 
-
     def do_GET(self):        
         (uri, args, type) = self.process_uri("GET")
 
@@ -207,14 +206,14 @@ class MongoHTTPRequest(BaseHTTPRequestHandler):
         else:
             args = {}
 
-        self.call_handler(uri, args)
+        self.call_handler(uri, args, method='GET')
         #self.wfile.write( self.path )
 
     def do_POST(self):
         (uri, args, type) = self.process_uri("POST")
         if uri == None:
             return
-        self.call_handler(uri, args)
+        self.call_handler(uri, args, method='POST')
 
     @staticmethod
     def serve_forever(port):
@@ -284,6 +283,8 @@ def main():
         sys.exit(2)
 
     MongoHTTPRequest.serve_forever(27080)
+
+
 if __name__ == "__main__":
     main()
 
