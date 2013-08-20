@@ -1,3 +1,16 @@
+"""
+a wsgi access point
+
+for dev purpose execute file:
+$ python wsgi.py
+
+for production purpose use i.e. gunicorn:
+$ gunicorn sleepymongoose.wsgi:app
+
+to provide alternative configuration:
+$ SLEEPYMONGOOSE_CONFIG=path_to_config.ini gunicorn sleepymongoose.wsgi:app
+
+"""
 from sleepymongoose.server import create_app
 from werkzeug.serving import run_simple
 import ConfigParser
